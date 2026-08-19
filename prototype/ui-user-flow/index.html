@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PROTOTYPE — excel_to_database Web UI User Flow (Issue #6)</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: "#eef2ff",
+              100: "#e0e7ff",
+              200: "#c7d2fe",
+              400: "#818cf8",
+              500: "#6366f1",
+              600: "#4f46e5",
+              700: "#4338ca",
+              800: "#3730a3",
+              900: "#312e81"
+            }
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap");
+    body { font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif; }
+    code, pre, .font-mono { font-family: "JetBrains Mono", monospace; }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(156, 163, 175, 0.4); border-radius: 3px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(156, 163, 175, 0.7); }
+    @keyframes pulse-subtle { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+    .animate-pulse-subtle { animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
+
+  <!-- Top Prototype Notice Banner -->
+  <header class="bg-slate-900/90 backdrop-blur border-b border-slate-800 px-6 py-3 flex items-center justify-between sticky top-0 z-40">
+    <div class="flex items-center gap-3">
+      <div class="bg-brand-600/20 text-brand-400 border border-brand-500/30 text-xs font-semibold px-2.5 py-1 rounded-full uppercase tracking-wider flex items-center gap-1.5">
+        <span class="w-2 h-2 rounded-full bg-brand-400 animate-ping"></span>
+        Interactive UI Prototype
+      </div>
+      <span class="text-slate-400 text-sm font-medium">excel_to_database • <a href="https://github.com/Senzo41/excel_to_databae/issues/6" target="_blank" class="text-brand-400 hover:underline">Issue #6</a></span>
+    </div>
+    <div class="flex items-center gap-4 text-xs text-slate-400">
+      <span class="flex items-center gap-1.5"><span class="w-2 h-2 rounded-full bg-emerald-500"></span> In-Memory State Active</span>
+      <span class="hidden sm:inline text-slate-600">|</span>
+      <button onclick="resetPrototypeState()" class="hover:text-slate-200 text-slate-400 transition underline underline-offset-4">Reset Demo State</button>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main id="app-root" class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 pb-28">
+    <!-- Dynamic Variant will mount here -->
+  </main>
+
+  <!-- Expandable Polars 50-Row Sample Dry-Run Drawer -->
+  <div id="sample-drawer" class="fixed bottom-16 right-6 z-30 transition-all duration-300 max-w-2xl w-full">
+    <div class="bg-slate-900/95 border border-slate-700 rounded-t-xl shadow-2xl backdrop-blur overflow-hidden transition-all duration-300" id="sample-drawer-content" style="max-height: 48px;">
+      <div class="p-3 px-4 bg-slate-800/80 border-b border-slate-700/80 flex items-center justify-between cursor-pointer select-none" onclick="toggleSampleDrawer()">
+        <div class="flex items-center gap-2 text-xs font-semibold text-slate-200">
+          <svg class="w-4 h-4 text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+          <span>Polars Sample Dry-Run Preview</span>
+          <span class="bg-slate-700 text-slate-300 px-2 py-0.5 rounded text-[10px] font-mono">50 rows cached (ADR-0003)</span>
+        </div>
+        <button class="text-slate-400 hover:text-slate-200 text-xs flex items-center gap-1 font-mono" id="sample-drawer-toggle-btn">
+          <span>Expand</span>
+          <svg class="w-4 h-4 transform transition-transform" id="sample-drawer-arrow" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/></svg>
+        </button>
+      </div>
+      <div class="p-4 overflow-x-auto custom-scrollbar max-h-80 text-xs">
+        <table class="w-full text-left font-mono border-collapse" id="dry-run-sample-table">
+          <!-- Transformed Sample Table Content -->
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating Prototype Variant Switcher (Per Prototype Skill) -->
+  <aside class="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-slate-900/95 border border-slate-700 text-white rounded-full shadow-2xl backdrop-blur-md px-4 py-2 flex items-center gap-4 text-xs">
+    <button onclick="prevVariant()" aria-label="Previous Variant" class="p-1 rounded-full hover:bg-slate-800 text-slate-400 hover:text-white transition">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+    </button>
+    <div class="flex items-center gap-2">
+      <span class="text-slate-500 font-mono">VARIANT:</span>
+      <span id="variant-label" class="font-semibold text-brand-400">A — Guided Wizard (Recommended)</span>
+    </div>
+    <button onclick="nextVariant()" aria-label="Next Variant" class="p-1 rounded-full hover:bg-slate-800 text-slate-400 hover:text-white transition">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+    </button>
+    <div class="hidden sm:flex items-center pl-2 border-l border-slate-700 text-[11px] text-slate-500 gap-1 font-mono">
+      <span>Use</span> <kbd class="bg-slate-800 px-1.5 py-0.5 rounded text-slate-300">←</kbd> <kbd class="bg-slate-800 px-1.5 py-0.5 rounded text-slate-300">→</kbd>
+    </div>
+  </aside>
+
+  <!-- Prototype Application Logic -->
+  <script>
+    // --- Mock State & Realistic Test Data ---
+    const INITIAL_STATE = {
+      variant: "A",
+      stage: 3, // 1: Upload, 2: Synthesis, 3: Review & Map, 4: Target Sink & Migrate
+      uploadedFiles: [
+        {
+          id: "f1",
+          name: "2023_Fertigung_DE.xlsx",
+          size: "3.4 MB",
+          sheetCount: 2,
+          sheets: [
+            { name: "Produktion_Q1", rows: 42300, headerRow: 5, dataRegion: "A5:G42305" },
+            { name: "Qualitaet_Log", rows: 8120, headerRow: 1, dataRegion: "A1:E8120" }
+          ]
+        },
+        {
+          id: "f2",
+          name: "2023_US_Production_Q1.xlsx",
+          size: "2.1 MB",
+          sheetCount: 1,
+          sheets: [
+            { name: "Plant_Detroit", rows: 31200, headerRow: 1, dataRegion: "A1:F31200" }
+          ]
+        }
+      ],
+      aiReasoningLog: [
+        "Identified 2 workbooks containing 3 data regions across 2 languages (German / English).",
+        "Header heuristic triggered on `Produktion_Q1`: Detected title block in rows 1-4; column labels extracted from row 5 (score: 0.94).",
+        "Found semantic overlap: `Arbeitsschritt` (DE) and `Process_Type` (US) represent canonical entity `operation_type`.",
+        "Detected 3 casing/typo flaws in DE sheet: 'Spanen' (94%), 'spanen' (5%), 'Spanien' (1%). Proposing categorical normalization.",
+        "Detected percentage format mismatch: DE sheet `Fertigstellung_%` uses 0-100 scale (e.g. 78.0), US sheet `Completion_Rate` uses 0.0-1.0 scale (e.g. 0.78).",
+        "Detected European comma decimal separator in `Kosten_EUR` (e.g. '12,50'). Synthesizing `PARSE_EU_DECIMAL` rule.",
+        "Synthesizing unified Target Schema `production_events` (6 columns, 1 PK, 2 synthetic filename dimensions)."
+      ],
+      llmTokensStreamed: true,
+      targetSchema: {
+        tableName: "production_events",
+        description: "Unified cross-plant manufacturing operations log",
+        columns: [
+          {
+            name: "event_id",
+            type: "UUID",
+            isPk: true,
+            sourceMapping: "AUTO_GENERATED",
+            confidence: 1.0,
+            transform: { op: "UUID_V4" },
+            samples: { raw: "-", transformed: "c9bf9e57-1685-4c89-bafb-ff5af830be8a" }
+          },
+          {
+            name: "event_date",
+            type: "Date",
+            isPk: false,
+            sourceMapping: ["Produktion_Q1:Datum", "Plant_Detroit:Date"],
+            confidence: 0.96,
+            transform: { op: "PARSE_DATE", formatAuto: true, formats: ["%d.%m.%Y", "%m/%d/%Y"] },
+            samples: { raw: "31.03.2023 / 03/31/2023", transformed: "2023-03-31" }
+          },
+          {
+            name: "operation_type",
+            type: "String",
+            isPk: false,
+            sourceMapping: ["Produktion_Q1:Arbeitsschritt", "Plant_Detroit:Process_Type"],
+            confidence: 0.92,
+            anomaly: {
+              type: "TYPO_CASING",
+              description: "3 casing/spelling variations: 'Spanen' (820), 'spanen' (112), 'Spanien' (4)",
+              quickFixLabel: "Normalize Categories & Typos",
+              fixed: false
+            },
+            transform: { op: "NORMALIZE_CATEGORICAL", rules: { "spanen": "Spanen", "Spanien": "Spanen" } },
+            samples: {
+              rawUnfixed: "spanen, Spanien, Fräsen",
+              rawFixed: "Spanen, Spanen, Fräsen",
+              transformed: "Spanen"
+            }
+          },
+          {
+            name: "completion_pct",
+            type: "Float64",
+            isPk: false,
+            sourceMapping: ["Produktion_Q1:Fertigstellung_%", "Plant_Detroit:Completion_Rate"],
+            confidence: 0.95,
+            anomaly: {
+              type: "SCALE_FLAW",
+              description: "Inconsistent percentage scale: DE sheet has integer values (78.0) vs US sheet (0.78)",
+              quickFixLabel: "Scale Percentages (×0.01)",
+              fixed: false
+            },
+            transform: { op: "SCALE_NUMERIC", multiplier: 0.01 },
+            samples: {
+              rawUnfixed: "78.0 (DE) vs 0.78 (US)",
+              rawFixed: "0.78 (DE) / 0.78 (US)",
+              transformed: "0.78"
+            }
+          },
+          {
+            name: "cost_eur",
+            type: "Float64",
+            isPk: false,
+            sourceMapping: ["Produktion_Q1:Kosten_EUR", "Plant_Detroit:Cost_USD"],
+            confidence: 0.91,
+            anomaly: {
+              type: "LOCALE_DECIMAL",
+              description: "German comma decimal format '12,50' detected in DE sheet",
+              quickFixLabel: "Parse EU Decimal (',' → '.')",
+              fixed: true
+            },
+            transform: { op: "PARSE_EU_DECIMAL" },
+            samples: {
+              rawUnfixed: "'12,50'",
+              rawFixed: "12.50",
+              transformed: "12.50"
+            }
+          },
+          {
+            name: "source_region",
+            type: "String",
+            isPk: false,
+            sourceMapping: "EXTRACT_FROM_FILENAME",
+            confidence: 0.98,
+            transform: { op: "REGEX_EXTRACT", pattern: ".*_([A-Z]{2})_?.*\.xlsx", captureGroup: 1 },
+            samples: { raw: "2023_Fertigung_DE.xlsx", transformed: "DE" }
+          }
+        ]
+      },
+      targetSink: {
+        type: "duckdb",
+        path: "./warehouse.duckdb",
+        tableMode: "CREATE_IF_NOT_EXISTS",
+        preflightStatus: "VERIFIED"
+      },
+      migration: {
+        isRunning: false,
+        isCancelled: false,
+        totalRows: 81620,
+        processedRows: 0,
+        currentStage: "Ready",
+        logs: []
+      }
+    };
+
+    let state = JSON.parse(JSON.stringify(INITIAL_STATE));
+
+    // --- Variant Management ---
+    const VARIANTS = [
+      { key: "A", name: "A — Guided Wizard (Recommended)" },
+      { key: "B", name: "B — Studio Master-Detail Layout" },
+      { key: "C", name: "C — Spreadsheet Matrix Grid" }
+    ];
+
+    function initVariantFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      const v = params.get("variant");
+      if (v && ["A", "B", "C"].includes(v.toUpperCase())) {
+        state.variant = v.toUpperCase();
+      } else {
+        state.variant = "A";
+      }
+      render();
+    }
+
+    function setVariant(newKey) {
+      state.variant = newKey;
+      const url = new URL(window.location.href);
+      url.searchParams.set("variant", newKey);
+      window.history.replaceState({}, "", url);
+      render();
+    }
+
+    function nextVariant() {
+      const idx = VARIANTS.findIndex(v => v.key === state.variant);
+      const nextIdx = (idx + 1) % VARIANTS.length;
+      setVariant(VARIANTS[nextIdx].key);
+    }
+
+    function prevVariant() {
+      const idx = VARIANTS.findIndex(v => v.key === state.variant);
+      const prevIdx = (idx - 1 + VARIANTS.length) % VARIANTS.length;
+      setVariant(VARIANTS[prevIdx].key);
+    }
+
+    window.addEventListener("keydown", (e) => {
+      if (["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement.tagName)) return;
+      if (e.key === "ArrowRight") nextVariant();
+      if (e.key === "ArrowLeft") prevVariant();
+    });
+
+    function resetPrototypeState() {
+      state = JSON.parse(JSON.stringify(INITIAL_STATE));
+      render();
+    }
+
+    // --- Actions ---
+    function setStage(newStage) {
+      state.stage = newStage;
+      render();
+    }
+
+    function toggleQuickFix(colIndex) {
+      const col = state.targetSchema.columns[colIndex];
+      if (col && col.anomaly) {
+        col.anomaly.fixed = !col.anomaly.fixed;
+        render();
+      }
+    }
+
+    function simulatePreflight() {
+      state.targetSink.preflightStatus = "RUNNING";
+      render();
+      setTimeout(() => {
+        state.targetSink.preflightStatus = "VERIFIED";
+        render();
+      }, 700);
+    }
+
+    let migrationInterval = null;
+    function startMigration() {
+      state.migration.isRunning = true;
+      state.migration.isCancelled = false;
+      state.migration.processedRows = 0;
+      state.migration.logs = [
+        "[SSE Event: 1] Initializing Polars LazyFrame execution engine...",
+        "[SSE Event: 2] Verified Target Sink write permissions on ./warehouse.duckdb",
+        "[SSE Event: 3] Calamine pre-extraction: processing 2023_Fertigung_DE.xlsx [Header offset row 5]..."
+      ];
+      render();
+
+      if (migrationInterval) clearInterval(migrationInterval);
+      migrationInterval = setInterval(() => {
+        if (state.migration.processedRows < state.migration.totalRows) {
+          state.migration.processedRows += Math.floor(Math.random() * 9500) + 4000;
+          if (state.migration.processedRows > state.migration.totalRows) {
+            state.migration.processedRows = state.migration.totalRows;
+          }
+          const pct = Math.round((state.migration.processedRows / state.migration.totalRows) * 100);
+          state.migration.logs.push(`[SSE Event] Written ${state.migration.processedRows.toLocaleString()} / ${state.migration.totalRows.toLocaleString()} rows (${pct}%)`);
+          render();
+        } else {
+          clearInterval(migrationInterval);
+          state.migration.isRunning = false;
+          state.migration.logs.push("[SSE Event: DONE] Migration completed successfully in 1.42s. 81,620 rows committed into DuckDB table `production_events`.");
+          render();
+        }
+      }, 400);
+    }
+
+    function cancelMigration() {
+      if (migrationInterval) clearInterval(migrationInterval);
+      state.migration.isRunning = false;
+      state.migration.isCancelled = true;
+      state.migration.logs.push("[SSE Event: CANCELLED] Received user cancellation token (asyncio.Event). Cooperative worker terminated cleanly without corrupting target sink.");
+      render();
+    }
+
+    let isDrawerOpen = false;
+    function toggleSampleDrawer() {
+      isDrawerOpen = !isDrawerOpen;
+      const drawer = document.getElementById("sample-drawer-content");
+      const arrow = document.getElementById("sample-drawer-arrow");
+      const btnText = document.querySelector("#sample-drawer-toggle-btn span");
+      if (isDrawerOpen) {
+        drawer.style.maxHeight = "500px";
+        arrow.style.transform = "rotate(180deg)";
+        btnText.textContent = "Collapse";
+      } else {
+        drawer.style.maxHeight = "48px";
+        arrow.style.transform = "rotate(0deg)";
+        btnText.textContent = "Expand";
+      }
+    }
+
+    // --- Renderers ---
+    function render() {
+      // Update switcher label
+      const currentVariant = VARIANTS.find(v => v.key === state.variant);
+      document.getElementById("variant-label").textContent = currentVariant ? currentVariant.name : state.variant;
+
+      // Render Sample Table
+      renderSampleTable();
+
+      // Render Root App View
+      const root = document.getElementById("app-root");
+      if (state.variant === "A") {
+        root.innerHTML = renderVariantA();
+      } else if (state.variant === "B") {
+        root.innerHTML = renderVariantB();
+      } else {
+        root.innerHTML = renderVariantC();
+      }
+    }
+
+    function renderSampleTable() {
+      const table = document.getElementById("dry-run-sample-table");
+      if (!table) return;
+
+      const cols = state.targetSchema.columns;
+      let html = `<thead><tr class="border-b border-slate-700 bg-slate-800/60 text-slate-300">`;
+      cols.forEach(c => {
+        html += `<th class="py-2 px-3">${c.name} <span class="text-[10px] text-slate-500 font-normal">(${c.type})</span></th>`;
+      });
+      html += `</tr></thead><tbody class="divide-y divide-slate-800/80 text-slate-400">`;
+
+      const sampleRows = [
+        { id: "e1a90b81", date: "2023-03-31", opFixed: "Spanen", opUnfixed: "spanen", pctFixed: 0.78, pctUnfixed: 78.0, cost: 12.50, region: "DE" },
+        { id: "e2c81d92", date: "2023-03-31", opFixed: "Spanen", opUnfixed: "Spanien", pctFixed: 0.85, pctUnfixed: 85.0, cost: 18.20, region: "DE" },
+        { id: "e3f94a11", date: "2023-03-31", opFixed: "Fräsen", opUnfixed: "Fräsen", pctFixed: 0.78, pctUnfixed: 0.78, cost: 45.00, region: "US" }
+      ];
+
+      sampleRows.forEach((r) => {
+        const opCol = cols.find(c => c.name === "operation_type");
+        const pctCol = cols.find(c => c.name === "completion_pct");
+        const opVal = (opCol && opCol.anomaly && opCol.anomaly.fixed) ? r.opFixed : r.opUnfixed;
+        const pctVal = (pctCol && pctCol.anomaly && pctCol.anomaly.fixed) ? r.pctFixed : r.pctUnfixed;
+
+        html += `<tr class="hover:bg-slate-800/40">
+          <td class="py-2 px-3 text-slate-500">${r.id}..</td>
+          <td class="py-2 px-3 text-emerald-400">${r.date}</td>
+          <td class="py-2 px-3 font-semibold ${opVal === 'spanen' || opVal === 'Spanien' ? 'text-amber-400 bg-amber-950/20' : 'text-slate-200'}">${opVal}</td>
+          <td class="py-2 px-3 font-semibold ${pctVal > 1 ? 'text-amber-400 bg-amber-950/20' : 'text-slate-200'}">${pctVal}</td>
+          <td class="py-2 px-3 text-slate-300">${r.cost.toFixed(2)}</td>
+          <td class="py-2 px-3 text-brand-400">${r.region}</td>
+        </tr>`;
+      });
+      html += `</tbody>`;
+      table.innerHTML = html;
+    }
+
+    // ==========================================
+    // VARIANT A: Guided Wizard Flow (Recommended)
+    // ==========================================
+    function renderVariantA() {
+      return `
+        <div class="space-y-6">
+          <!-- Wizard Stepper Header -->
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-lg">
+            <div class="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <h1 class="text-xl font-bold text-white flex items-center gap-2">
+                  <span>Excel to Database Migration Session</span>
+                  <span class="text-xs bg-slate-800 text-slate-400 font-mono px-2 py-0.5 rounded-full border border-slate-700">sess_9a8f21</span>
+                </h1>
+                <p class="text-xs text-slate-400 mt-1">Guided wizard workflow for messy Excel extraction, LLM schema harmonization, and Polars execution.</p>
+              </div>
+
+              <!-- Steps Pill Navigation -->
+              <nav class="flex items-center gap-2 bg-slate-950 p-1.5 rounded-xl border border-slate-800 text-xs">
+                ${renderStepButton(1, "1. Ingest & Extract")}
+                <span class="text-slate-700">→</span>
+                ${renderStepButton(2, "2. AI Synthesis")}
+                <span class="text-slate-700">→</span>
+                ${renderStepButton(3, "3. Review & Map")}
+                <span class="text-slate-700">→</span>
+                ${renderStepButton(4, "4. Target Sink & Migrate")}
+              </nav>
+            </div>
+          </div>
+
+          <!-- Step Body Content -->
+          ${renderStepContent()}
+        </div>
+      `;
+    }
+
+    function renderStepButton(stepNum, label) {
+      const isActive = state.stage === stepNum;
+      const isPast = state.stage > stepNum;
+      return `
+        <button onclick="setStage(${stepNum})" class="px-3 py-1.5 rounded-lg font-medium transition flex items-center gap-1.5 ${
+          isActive 
+            ? 'bg-brand-600 text-white shadow' 
+            : isPast 
+              ? 'text-slate-300 hover:bg-slate-800' 
+              : 'text-slate-500 hover:text-slate-300'
+        }">
+          ${isPast ? '<span class="text-emerald-400">✓</span>' : ''}
+          ${label}
+        </button>
+      `;
+    }
+
+    function renderStepContent() {
+      if (state.stage === 1) return renderStage1Upload();
+      if (state.stage === 2) return renderStage2Synthesis();
+      if (state.stage === 3) return renderStage3ReviewMap();
+      if (state.stage === 4) return renderStage4Migrate();
+    }
+
+    // Stage 1: Upload & Extraction
+    function renderStage1Upload() {
+      return `
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div class="lg:col-span-2 space-y-4">
+            <div class="border-2 border-dashed border-slate-700 hover:border-brand-500 bg-slate-900/50 rounded-2xl p-8 text-center transition cursor-pointer group">
+              <div class="w-12 h-12 rounded-full bg-brand-500/10 text-brand-400 flex items-center justify-center mx-auto mb-3 group-hover:scale-110 transition">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+              </div>
+              <h3 class="text-sm font-semibold text-slate-200">Drop your messy Excel & CSV files here</h3>
+              <p class="text-xs text-slate-400 mt-1">Supports multi-sheet .xlsx, .xls, .csv with offset title blocks, merged headers & irregular layouts</p>
+              <button class="mt-4 px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-lg text-xs font-medium transition shadow">Browse Files</button>
+            </div>
+
+            <!-- Uploaded Files List with Extraction Heuristic Diagnostics -->
+            <div class="space-y-3">
+              <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Detected Workbooks & Calamine Pre-Extraction</h4>
+              ${state.uploadedFiles.map(f => `
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-lg bg-emerald-950/60 border border-emerald-500/30 text-emerald-400 flex items-center justify-center font-bold text-xs">XLS</div>
+                    <div>
+                      <div class="text-sm font-medium text-slate-200">${f.name}</div>
+                      <div class="text-xs text-slate-500">${f.size} • ${f.sheetCount} sheets detected</div>
+                    </div>
+                  </div>
+                  <div class="flex flex-wrap gap-2">
+                    ${f.sheets.map(s => `
+                      <span class="bg-slate-950 text-slate-300 border border-slate-800 text-[11px] px-2.5 py-1 rounded-md flex items-center gap-1.5 font-mono">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                        ${s.name} <span class="text-slate-500">(Header: Row ${s.headerRow})</span>
+                      </span>
+                    `).join("")}
+                  </div>
+                </div>
+              `).join("")}
+            </div>
+          </div>
+
+          <!-- Sidebar Info -->
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
+            <h3 class="text-sm font-bold text-slate-200 flex items-center gap-2">
+              <span class="text-brand-400">⚡</span> Rust Calamine Fast Ingestion
+            </h3>
+            <p class="text-xs text-slate-400 leading-relaxed">
+              Files are pre-extracted in memory in &lt;5ms using Rust bindings (python-calamine). Title rows and metadata comments are scored to pinpoint exact Data Region coordinates without sending raw cells to the LLM.
+            </p>
+            <div class="pt-4 border-t border-slate-800">
+              <button onclick="setStage(2)" class="w-full py-2.5 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-semibold transition flex items-center justify-center gap-2 shadow-lg shadow-brand-600/20">
+                <span>Start AI Synthesis & Profiling</span>
+                <span>→</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Stage 2: AI Synthesis & Profiling
+    function renderStage2Synthesis() {
+      return `
+        <div class="max-w-3xl mx-auto space-y-6">
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-brand-600/20 border border-brand-500/30 text-brand-400 flex items-center justify-center">
+                  <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path></svg>
+                </div>
+                <div>
+                  <h3 class="text-sm font-semibold text-slate-200">AI Schema Harmonization & Heuristic Analysis</h3>
+                  <p class="text-xs text-slate-500">FastAPI streaming telemetry via SSE (ADR-0001 & ADR-0004)</p>
+                </div>
+              </div>
+              <span class="text-xs bg-emerald-950 text-emerald-400 border border-emerald-500/30 px-2.5 py-1 rounded-full font-mono">Status: Stream Active</span>
+            </div>
+
+            <!-- Live Streaming LLM Reasoning Terminal Card -->
+            <div class="bg-slate-950 border border-slate-800/90 rounded-xl p-4 font-mono text-xs text-slate-300 space-y-2 max-h-72 overflow-y-auto custom-scrollbar">
+              <div class="text-slate-500 text-[11px] mb-2 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>Live LLM Token Stream (LLM_TOKEN SSE events)</span>
+              </div>
+              ${state.aiReasoningLog.map((log, i) => `
+                <div class="flex items-start gap-2">
+                  <span class="text-brand-400 select-none">›</span>
+                  <span class="leading-relaxed ${i >= 3 && i <= 5 ? 'text-amber-300 bg-amber-950/20 px-1 rounded' : 'text-slate-300'}">${log}</span>
+                </div>
+              `).join("")}
+            </div>
+
+            <div class="flex items-center justify-between pt-2">
+              <div class="text-xs text-slate-400">Synthesized 1 target entity (production_events), 6 columns, and 3 anomaly quick-fixes.</div>
+              <button onclick="setStage(3)" class="px-5 py-2.5 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-semibold transition flex items-center gap-2 shadow-lg shadow-brand-600/20">
+                <span>Proceed to Review Session</span>
+                <span>→</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // Stage 3: Review Session & Visual Column Mapping
+    function renderStage3ReviewMap() {
+      const cols = state.targetSchema.columns;
+
+      return `
+        <div class="space-y-6">
+          <!-- Table Overview Card -->
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="space-y-1">
+              <div class="flex items-center gap-2">
+                <span class="text-xs bg-brand-500/20 text-brand-300 border border-brand-500/30 px-2 py-0.5 rounded font-mono uppercase">Target Entity</span>
+                <h2 class="text-base font-bold text-white font-mono">${state.targetSchema.tableName}</h2>
+              </div>
+              <p class="text-xs text-slate-400">${state.targetSchema.description}</p>
+            </div>
+
+            <div class="flex items-center gap-3">
+              <div class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-1.5 text-xs text-slate-300 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                <span>Dry-Run: <b class="text-emerald-400">50 Rows Validated (0 errors)</b></span>
+              </div>
+              <button onclick="setStage(4)" class="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-semibold transition flex items-center gap-2 shadow">
+                <span>Configure Target Sink</span>
+                <span>→</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Dual-List Entity Mapping & Inline Transformation Cards -->
+          <div class="space-y-3">
+            <div class="flex items-center justify-between text-xs font-semibold text-slate-400 uppercase tracking-wider px-2">
+              <span>Target Schema Column & Data Type</span>
+              <span>Source Columns, Operations & 1-Click Heuristic Fixes</span>
+            </div>
+
+            ${cols.map((col, idx) => `
+              <div class="bg-slate-900 border ${col.anomaly && !col.anomaly.fixed ? 'border-amber-500/50 shadow-amber-500/5' : 'border-slate-800'} rounded-xl p-4 transition-all hover:border-slate-700 space-y-3">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                  <!-- Left: Target Field Definition -->
+                  <div class="flex items-center gap-3 min-w-[260px]">
+                    <div class="w-2 h-2 rounded-full ${col.isPk ? 'bg-amber-400' : 'bg-brand-400'}"></div>
+                    <div>
+                      <div class="flex items-center gap-2">
+                        <span class="text-sm font-semibold text-slate-100 font-mono">${col.name}</span>
+                        ${col.isPk ? '<span class="text-[10px] bg-amber-950 text-amber-300 border border-amber-500/30 px-1.5 py-0.2 rounded font-mono">PRIMARY KEY</span>' : ''}
+                      </div>
+                      <span class="text-[11px] text-slate-400 font-mono">${col.type}</span>
+                    </div>
+                  </div>
+
+                  <!-- Right: Source Binding & Transformation Rule -->
+                  <div class="flex-1 flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex flex-wrap items-center gap-1.5">
+                      <span class="text-xs text-slate-500">maps from:</span>
+                      ${Array.isArray(col.sourceMapping) ? col.sourceMapping.map(src => `
+                        <span class="bg-slate-950 text-slate-300 border border-slate-800 text-xs px-2 py-0.5 rounded font-mono">${src}</span>
+                      `).join("") : `
+                        <span class="bg-slate-950 text-brand-300 border border-slate-800 text-xs px-2 py-0.5 rounded font-mono">${col.sourceMapping}</span>
+                      `}
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                      <span class="text-xs bg-slate-800 text-slate-300 px-2 py-1 rounded font-mono border border-slate-700">
+                        Op: ${col.transform.op}
+                      </span>
+                      <span class="text-xs text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-2 py-0.5 rounded font-mono">
+                        ${Math.round(col.confidence * 100)}% match
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Anomaly / Smart-Fix Banner (if detected) -->
+                ${col.anomaly ? `
+                  <div class="bg-slate-950/80 border ${col.anomaly.fixed ? 'border-emerald-500/30 bg-emerald-950/10' : 'border-amber-500/30 bg-amber-950/20'} rounded-lg p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div class="flex items-center gap-2 text-xs">
+                      <span class="${col.anomaly.fixed ? 'text-emerald-400' : 'text-amber-400'} text-sm">${col.anomaly.fixed ? '✓' : '⚠️'}</span>
+                      <div>
+                        <div class="font-medium ${col.anomaly.fixed ? 'text-emerald-300' : 'text-amber-300'}">${col.anomaly.description}</div>
+                        <div class="text-[11px] text-slate-500">Heuristic detected during statistical profiling.</div>
+                      </div>
+                    </div>
+                    <button onclick="toggleQuickFix(${idx})" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 shrink-0 ${
+                      col.anomaly.fixed 
+                        ? 'bg-emerald-800 hover:bg-emerald-700 text-emerald-100' 
+                        : 'bg-amber-500 hover:bg-amber-400 text-slate-950 shadow-md shadow-amber-500/20'
+                    }">
+                      <span>${col.anomaly.fixed ? '✓ Fix Applied (Revert)' : '⚡ ' + col.anomaly.quickFixLabel}</span>
+                    </button>
+                  </div>
+                ` : ''}
+
+                <!-- Instant 3-Row Sample Value Diff Pill -->
+                <div class="bg-slate-950/40 rounded-lg p-2.5 px-3 border border-slate-800/80 flex items-center justify-between text-xs font-mono">
+                  <div class="flex items-center gap-2 text-slate-400">
+                    <span class="text-slate-600">Sample In:</span>
+                    <span class="text-slate-300">${col.anomaly ? (col.anomaly.fixed ? col.samples.rawFixed : col.samples.rawUnfixed) : col.samples.raw}</span>
+                  </div>
+                  <span class="text-slate-600">→</span>
+                  <div class="flex items-center gap-2">
+                    <span class="text-slate-600">Sample Out:</span>
+                    <span class="text-emerald-400 font-semibold">${col.samples.transformed}</span>
+                  </div>
+                </div>
+              </div>
+            `).join("")}
+          </div>
+        </div>
+      `;
+    }
+
+    // Stage 4: Target Sink Config & Migration Execution
+    function renderStage4Migrate() {
+      const isRunning = state.migration.isRunning;
+      const total = state.migration.totalRows;
+      const processed = state.migration.processedRows;
+      const pct = Math.round((processed / total) * 100);
+
+      return `
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <!-- Target Sink Configuration -->
+          <div class="lg:col-span-1 bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-4">
+            <h3 class="text-sm font-bold text-slate-200 flex items-center gap-2">
+              <svg class="w-4 h-4 text-brand-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4"/></svg>
+              Target Sink Destination
+            </h3>
+
+            <div class="space-y-3 text-xs">
+              <div>
+                <label class="block text-slate-400 mb-1">Database / Format Engine</label>
+                <select class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-200 focus:border-brand-500 outline-none">
+                  <option value="duckdb" selected>DuckDB (Embedded Analytics Database)</option>
+                  <option value="parquet">Parquet Directory Tree</option>
+                  <option value="sqlite">SQLite Database</option>
+                  <option value="postgres">PostgreSQL</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-slate-400 mb-1">Output File Path / URI</label>
+                <input type="text" value="./warehouse.duckdb" class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 font-mono text-slate-200 focus:border-brand-500 outline-none" />
+              </div>
+
+              <div>
+                <label class="block text-slate-400 mb-1">Collision Policy</label>
+                <select class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-200 focus:border-brand-500 outline-none">
+                  <option selected>CREATE_IF_NOT_EXISTS (Append or create)</option>
+                  <option>REPLACE_TABLE (Drop and recreate)</option>
+                  <option>FAIL_IF_EXISTS</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Pre-Flight Sink Verification (ADR-0005) -->
+            <div class="pt-3 border-t border-slate-800 space-y-2">
+              <div class="flex items-center justify-between text-xs">
+                <span class="text-slate-400">Pre-Flight Verification:</span>
+                ${state.targetSink.preflightStatus === "VERIFIED" ? `
+                  <span class="text-emerald-400 font-mono flex items-center gap-1">✓ Pre-Flight OK</span>
+                ` : `
+                  <span class="text-amber-400 font-mono">Checking...</span>
+                `}
+              </div>
+              <button onclick="simulatePreflight()" class="w-full py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-mono transition border border-slate-700">
+                Run Pre-Flight Test (POST /test-sink)
+              </button>
+            </div>
+          </div>
+
+          <!-- Migration Execution Panel & Real-Time SSE Telemetry -->
+          <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-5 space-y-5 flex flex-col justify-between">
+            <div class="space-y-4">
+              <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="text-sm font-bold text-slate-200">Migration Execution Engine</h3>
+                <span class="text-xs bg-brand-950 text-brand-300 border border-brand-500/30 px-2.5 py-0.5 rounded-full font-mono">Polars In-Process Runner</span>
+              </div>
+
+              <!-- Progress Bar -->
+              <div class="space-y-2">
+                <div class="flex items-center justify-between text-xs">
+                  <span class="text-slate-400">Total Progress:</span>
+                  <span class="font-mono font-bold ${pct === 100 ? 'text-emerald-400' : 'text-brand-400'}">${processed.toLocaleString()} / ${total.toLocaleString()} rows (${pct}%)</span>
+                </div>
+                <div class="w-full bg-slate-950 rounded-full h-3 overflow-hidden border border-slate-800">
+                  <div class="bg-brand-500 h-full transition-all duration-300 ${pct === 100 ? 'bg-emerald-500' : ''}" style="width: ${pct}%"></div>
+                </div>
+              </div>
+
+              <!-- Live SSE Telemetry Terminal -->
+              <div class="space-y-1">
+                <div class="text-[11px] font-mono text-slate-500 flex items-center justify-between">
+                  <span>Server-Sent Events Stream (GET /api/sessions/{id}/events)</span>
+                  ${isRunning ? '<span class="text-emerald-400 animate-pulse">● Live Stream Active</span>' : ''}
+                </div>
+                <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 font-mono text-[11px] text-slate-300 h-44 overflow-y-auto custom-scrollbar space-y-1">
+                  ${state.migration.logs.length === 0 ? `
+                    <div class="text-slate-600 italic">No execution events yet. Click "Start Migration Job" below.</div>
+                  ` : state.migration.logs.map(log => `
+                    <div class="leading-relaxed ${log.includes('DONE') ? 'text-emerald-400 font-bold' : log.includes('CANCELLED') ? 'text-rose-400 font-bold' : 'text-slate-300'}">${log}</div>
+                  `).join("")}
+                </div>
+              </div>
+            </div>
+
+            <!-- Execution Action Buttons with Cooperative Abort -->
+            <div class="flex items-center gap-3 pt-4 border-t border-slate-800">
+              ${!isRunning && pct < 100 ? `
+                <button onclick="startMigration()" class="flex-1 py-3 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 shadow-lg shadow-brand-600/20">
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  <span>Start Migration Job</span>
+                </button>
+              ` : isRunning ? `
+                <button onclick="cancelMigration()" class="flex-1 py-3 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 shadow-lg shadow-rose-600/20 animate-pulse">
+                  <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                  <span>Cancel / Abort Migration (Cooperative Event)</span>
+                </button>
+              ` : `
+                <button onclick="startMigration()" class="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold transition flex items-center justify-center gap-2 border border-slate-700">
+                  <span>Re-Run Migration</span>
+                </button>
+              `}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // ==========================================
+    // VARIANT B: Studio Workspace (Master-Detail)
+    // ==========================================
+    function renderVariantB() {
+      const cols = state.targetSchema.columns;
+      return `
+        <div class="space-y-4">
+          <div class="bg-slate-900 border border-slate-800 rounded-xl p-3 px-4 flex items-center justify-between text-xs">
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-white">Studio Workspace Layout</span>
+              <span class="text-slate-500">•</span>
+              <span class="text-slate-400">Unified 3-column IDE-style view</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <span class="bg-emerald-950 text-emerald-400 px-2 py-0.5 rounded font-mono text-[10px]">Polars Engine Ready</span>
+              <button onclick="startMigration()" class="px-3 py-1 bg-brand-600 hover:bg-brand-500 text-white rounded font-semibold transition">Quick Migrate</button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-12 gap-4">
+            <!-- Left Column: Source Hierarchy Explorer -->
+            <div class="col-span-12 md:col-span-3 bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3">
+              <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Source Tree</h4>
+              <div class="space-y-2 text-xs font-mono">
+                <div class="p-2 bg-slate-950 rounded border border-slate-800 space-y-1">
+                  <div class="text-slate-200 font-semibold truncate">📁 2023_Fertigung_DE.xlsx</div>
+                  <div class="pl-4 text-emerald-400">└ 📊 Produktion_Q1</div>
+                  <div class="pl-4 text-slate-500">└ 📊 Qualitaet_Log</div>
+                </div>
+                <div class="p-2 bg-slate-950 rounded border border-slate-800 space-y-1">
+                  <div class="text-slate-200 font-semibold truncate">📁 2023_US_Production.xlsx</div>
+                  <div class="pl-4 text-emerald-400">└ 📊 Plant_Detroit</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Center Column: Mapping Table & Smart Fixes -->
+            <div class="col-span-12 md:col-span-6 bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-4">
+              <div class="flex items-center justify-between">
+                <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Target Entity: <span class="text-brand-400 font-mono">production_events</span></h4>
+                <span class="text-[11px] text-slate-400 font-mono">${cols.length} mapped attributes</span>
+              </div>
+
+              <div class="space-y-2 max-h-[500px] overflow-y-auto custom-scrollbar pr-1">
+                ${cols.map((col, idx) => `
+                  <div class="p-3 bg-slate-950 rounded-xl border ${col.anomaly && !col.anomaly.fixed ? 'border-amber-500/50' : 'border-slate-800'} space-y-2">
+                    <div class="flex items-center justify-between text-xs">
+                      <span class="font-mono font-bold text-slate-200">${col.name} <span class="text-slate-500 font-normal">(${col.type})</span></span>
+                      ${col.anomaly ? `
+                        <button onclick="toggleQuickFix(${idx})" class="px-2 py-0.5 text-[10px] font-bold rounded ${col.anomaly.fixed ? 'bg-emerald-900 text-emerald-300' : 'bg-amber-500 text-slate-950'}">
+                          ${col.anomaly.fixed ? '✓ Fixed' : '⚡ ' + col.anomaly.quickFixLabel}
+                        </button>
+                      ` : ''}
+                    </div>
+                    <div class="text-[11px] text-slate-400 font-mono flex items-center justify-between">
+                      <span class="text-slate-500">Transform: ${col.transform.op}</span>
+                      <span class="text-emerald-400">Sample: ${col.samples.transformed}</span>
+                    </div>
+                  </div>
+                `).join("")}
+              </div>
+            </div>
+
+            <!-- Right Column: Live Stream & Diagnostic Inspector -->
+            <div class="col-span-12 md:col-span-3 bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3">
+              <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider">Telemetry & State</h4>
+              <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-[11px] font-mono text-slate-400 space-y-2">
+                <div>Sink: <span class="text-brand-400">warehouse.duckdb</span></div>
+                <div>Status: <span class="text-emerald-400">Pre-Flight OK</span></div>
+                <div>Dry-Run Rows: <span class="text-slate-200">50 cached</span></div>
+              </div>
+              <div class="pt-2">
+                <button onclick="startMigration()" class="w-full py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-lg text-xs font-bold transition">
+                  Execute Polars Job
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // ==========================================
+    // VARIANT C: Spreadsheet Matrix Grid Layout
+    // ==========================================
+    function renderVariantC() {
+      const cols = state.targetSchema.columns;
+      return `
+        <div class="space-y-4">
+          <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+            <div>
+              <h2 class="text-sm font-bold text-white">Spreadsheet Matrix Grid & Header Mappings</h2>
+              <p class="text-slate-400 text-xs">Direct tabular mapping with column header controls and smart-fix popovers</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="startMigration()" class="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-lg font-semibold transition">Execute Stream</button>
+            </div>
+          </div>
+
+          <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 overflow-x-auto custom-scrollbar">
+            <table class="w-full text-left font-mono text-xs border-collapse min-w-[700px]">
+              <thead>
+                <tr class="border-b-2 border-slate-700 bg-slate-950/80">
+                  ${cols.map((col, idx) => `
+                    <th class="p-3 align-top border-r border-slate-800 last:border-0 min-w-[150px]">
+                      <div class="space-y-1.5">
+                        <div class="text-brand-400 font-bold">${col.name}</div>
+                        <div class="text-[10px] text-slate-400">${col.type}</div>
+                        ${col.anomaly ? `
+                          <button onclick="toggleQuickFix(${idx})" class="w-full text-[10px] px-1.5 py-1 rounded font-bold ${col.anomaly.fixed ? 'bg-emerald-900/80 text-emerald-200' : 'bg-amber-500 text-slate-950'}">
+                            ${col.anomaly.fixed ? '✓ Fixed' : '⚡ ' + col.anomaly.quickFixLabel}
+                          </button>
+                        ` : ''}
+                      </div>
+                    </th>
+                  `).join("")}
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-800 text-slate-300">
+                <tr class="hover:bg-slate-800/30">
+                  <td class="p-3 border-r border-slate-800 text-slate-500">c9bf9e57..</td>
+                  <td class="p-3 border-r border-slate-800 text-emerald-400">2023-03-31</td>
+                  <td class="p-3 border-r border-slate-800 font-semibold ${cols[2].anomaly?.fixed ? 'text-slate-200' : 'text-amber-400'}">
+                    ${cols[2].anomaly?.fixed ? 'Spanen' : 'spanen'}
+                  </td>
+                  <td class="p-3 border-r border-slate-800 font-semibold ${cols[3].anomaly?.fixed ? 'text-slate-200' : 'text-amber-400'}">
+                    ${cols[3].anomaly?.fixed ? '0.78' : '78.0'}
+                  </td>
+                  <td class="p-3 border-r border-slate-800 text-slate-200">12.50</td>
+                  <td class="p-3 text-brand-400">DE</td>
+                </tr>
+                <tr class="hover:bg-slate-800/30">
+                  <td class="p-3 border-r border-slate-800 text-slate-500">d1a49f12..</td>
+                  <td class="p-3 border-r border-slate-800 text-emerald-400">2023-03-31</td>
+                  <td class="p-3 border-r border-slate-800 font-semibold ${cols[2].anomaly?.fixed ? 'text-slate-200' : 'text-amber-400'}">
+                    ${cols[2].anomaly?.fixed ? 'Spanen' : 'Spanien'}
+                  </td>
+                  <td class="p-3 border-r border-slate-800 font-semibold ${cols[3].anomaly?.fixed ? 'text-slate-200' : 'text-amber-400'}">
+                    ${cols[3].anomaly?.fixed ? '0.85' : '85.0'}
+                  </td>
+                  <td class="p-3 border-r border-slate-800 text-slate-200">18.20</td>
+                  <td class="p-3 text-brand-400">DE</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    // --- Init ---
+    initVariantFromUrl();
+  </script>
+</body>
+</html>

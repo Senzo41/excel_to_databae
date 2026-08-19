@@ -32,7 +32,16 @@ The process of parsing temporal or categorical dimensions (e.g., year, departmen
 The specific semantic correspondence between a messy source column (across one or more **Sheets** or filename metadata) and a canonical column in the **Target Schema**, including type casting and data cleaning rules.
 
 ### Transformation Operation
-An atomic, parameter-driven transformation rule (e.g., `DIRECT`, `CAST`, `CLEAN_STRING`, `PARSE_DATE`, `REGEX_EXTRACT`, `MAP_VALUES`, `FALLBACK_VALUE`, `EXTRACT_FROM_FILENAME`) executed by the **Polars** engine.
+An atomic, parameter-driven transformation rule (e.g., `DIRECT`, `CAST`, `CLEAN_STRING`, `PARSE_DATE`, `REGEX_EXTRACT`, `MAP_VALUES`, `FALLBACK_VALUE`, `EXTRACT_FROM_FILENAME`, `SCALE_NUMERIC`, `NORMALIZE_CATEGORICAL`) executed by the **Polars** engine.
+
+### Data Quality Heuristic
+An algorithmic analysis performed during statistical profiling that detects formatting flaws, locale/decimal anomalies (e.g. `0,78` vs `0.78`), scale/unit discrepancies (e.g. `78.0` vs `0.78` for percentages), and casing or spelling variations across column values.
+
+### Categorical Normalization
+A transformation operation (`NORMALIZE_CATEGORICAL` or `MAP_VALUES`) that reconciles casing variations, fuzzy typos (e.g., `"Spanen"` vs `"spanen"`), and synonyms into canonical target categories.
+
+### Numeric Normalization
+A transformation operation (`SCALE_NUMERIC` or `CAST`) that parses locale-specific decimal separators, strips currency/unit symbols, and applies scaling multipliers (e.g. $\times 0.01$ for percentages).
 
 ### Conflict Strategy
 The policy for resolving duplicate keys or record collisions during entity normalization and union operations (`KEEP_FIRST`, `KEEP_LAST`, `MERGE_NON_NULL`, `FAIL_ON_CONFLICT`).
@@ -52,3 +61,17 @@ The end-to-end execution of a **Mapping Plan** using **Polars** to transform raw
 
 ### Review Session
 The interactive review phase in the UI where the user inspects the AI's proposed **Target Schema** and **Mapping Plan**, makes manual adjustments, and approves the **Migration Job**.
+
+### Session Workspace
+The isolated, temporary directory and in-memory state tracking uploaded **Workbooks**, profiling metadata, validated **Mapping Plans**, and staging outputs for the duration of a **Review Session**.
+
+### Streaming Event
+A structured, typed telemetry message pushed from the FastAPI backend to the client via SSE to communicate stage transitions, row progress, log lines, or error states during a **Migration Job** or analysis.
+
+### Dry-Run Validation
+A low-latency validation check that executes candidate **Transformation Operations** on a cached sample slice (e.g. 50 rows per **Sheet**) during the **Review Session** to verify regexes, casts, and date parsing before full execution.
+
+### Pre-Flight Sink Verification
+An upfront connectivity, authorization, and collision inspection of a **Target Sink** prior to launching a **Migration Job**.
+
+
