@@ -18,3 +18,13 @@ We adopt:
 1. **Visual Node-and-Wire Graph Canvas (React Flow)**: High visual novelty but degrades into unusable spaghetti diagrams when mapping 10+ sheets and 50+ columns for non-technical users.
 2. **Spreadsheet-Only Matrix Grid**: Familiar to Excel users but creates high visual noise when configuring complex cross-sheet unions, filename metadata extraction, and multi-step transformation rules.
 3. **Guided Dual-List with Smart-Fix Cards (Chosen)**: Optimal information density, clear mental model for non-technical users, instant feedback on transformations, and high accessibility.
+
+
+## Prototype Validation & Verdict
+
+Following interactive evaluation of three structural variants in `prototype/ui-user-flow/index.html` (Issue #6):
+- **Variant A (Winner)**: Guided Step-by-Step Notion-Inspired SaaS Pipeline with Segmented Breadcrumb Stepper, Dual-List Entity Mapping, 1-Click Heuristic Smart Fixes (`SCALE_NUMERIC`, `NORMALIZE_CATEGORICAL`, `PARSE_EU_DECIMAL`), and Polars 50-row Dry-Run Preview.
+- **Variant B (Rejected)**: Studio Master-Detail Layout — added cognitive overload with simultaneous tree views for non-technical users.
+- **Variant C (Rejected)**: Airtable Matrix Grid — lacked visual clarity for cross-sheet unions and synthetic filename metadata extraction.
+
+**Verdict**: Adopt **Variant A** as the canonical frontend architecture for the React web application.
