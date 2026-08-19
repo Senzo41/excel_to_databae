@@ -186,12 +186,12 @@
       ],
       aiReasoningLog: [
         "Ingested 2 workbooks containing 3 data regions across German and English layouts.",
-        "Header heuristic triggered on `Produktion_Q1`: Offset title block detected; header candidate extracted from row 5 (confidence 96%).",
-        "Found semantic entity match: `Arbeitsschritt` (DE) ↔ `Process_Type` (US) → `operation_type`.",
+        "Header heuristic triggered on 'Produktion_Q1': Offset title block detected; header candidate extracted from row 5 (confidence 96%).",
+        "Found semantic entity match: 'Arbeitsschritt' (DE) ↔ 'Process_Type' (US) → `operation_type`.",
         "Quality Heuristic: Detected 3 casing/typo variations in DE sheet ('Spanen' 94%, 'spanen' 5%, 'Spanien' 1%). Proposing categorical normalization.",
-        "Quality Heuristic: Detected percentage format flaw: DE sheet `Fertigstellung_%` uses 0-100 scale (e.g. 78.0) vs US sheet `Completion_Rate` uses 0.0-1.0 (e.g. 0.78).",
-        "Quality Heuristic: Detected European comma decimal format in `Kosten_EUR` (e.g. '12,50'). Synthesizing `PARSE_EU_DECIMAL` rule.",
-        "Synthesizing unified Target Schema `production_events` (6 columns, 1 PK, 2 synthetic filename metadata dimensions)."
+        "Quality Heuristic: Detected percentage format flaw: DE sheet 'Fertigstellung_%' uses 0-100 scale (e.g. 78.0) vs US sheet 'Completion_Rate' uses 0.0-1.0 (e.g. 0.78).",
+        "Quality Heuristic: Detected European comma decimal format in 'Kosten_EUR' (e.g. '12,50'). Synthesizing 'PARSE_EU_DECIMAL' rule.",
+        "Synthesizing unified Target Schema 'production_events' (6 columns, 1 PK, 2 synthetic filename metadata dimensions)."
       ],
       targetSchema: {
         tableName: "production_events",
@@ -416,7 +416,7 @@
         } else {
           clearInterval(migrationInterval);
           state.migration.isRunning = false;
-          state.migration.logs.push("[SSE: DONE] Migration completed in 1.42s. 81,620 rows committed into DuckDB table `production_events`.");
+          state.migration.logs.push("[SSE: DONE] Migration completed in 1.42s. 81,620 rows committed into DuckDB table 'production_events'.");
           render();
         }
       }, 350);
@@ -819,7 +819,7 @@
                 `}
               </div>
               <button onclick="simulatePreflight()" class="w-full py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-xs font-mono transition border border-slate-200 dark:border-slate-700">
-                Run Test (`POST /test-sink`)
+                Run Test ('POST /test-sink')
               </button>
             </div>
           </div>
